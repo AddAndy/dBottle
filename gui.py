@@ -27,17 +27,18 @@ class LEDFakeout(QTableWidget):
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.updateBackground)
-        self.timer.start(100)
+        #60 FPS, 1000ms/60 frams
+        self.timer.start((1000/60))
         self.show()
 
     def updateBackground(self):
-        frame = self.frameBuffer.get();
-
-        for c in range(0,5):
-            for r in range(0,30):
-                tableItem = self.item(r,c);
-                (R,G,B,Bri) = frame.getPixel(r,c).toQuad();
-                tableItem.setBackground(QColor(R,G,B))
+        if self.frameBuffer.empty() == False:
+            frame = self.frameBuffer.get();
+            for c in range(0,5):
+                for r in range(0,30):
+                    tableItem = self.item(r,c);
+                    (R,G,B,Bri) = frame.getPixel(r,c).toQuad();
+                    tableItem.setBackground(QColor(R,G,B))
 
 
 if __name__ == '__main__':

@@ -28,7 +28,7 @@ class Pixel(object):
         self.brightness = brightness;
 
     def clear(self):
-        self.set(0,0,0,0)
+        self.set(255,255,255,0)
 
     def toQuad(self):
         return (self.red,self.green,self.blue,self.brightness)
@@ -58,7 +58,7 @@ class Frame(object):
     pixels = [[]]
     def __init__(self,previousFrame=None):
         if (previousFrame == None):
-            self.pixels = [[Pixel(0,0,0,0) for x in range(self.columns)] for x in range(self.rows)]
+            self.pixels = [[Pixel(0,255,0,0) for x in range(self.columns)] for x in range(self.rows)]
         else:
             self.pixels = previousFrame.pixels;
 
@@ -79,6 +79,34 @@ class Frame(object):
                 flat[i] = self.pixels[m][n].toQuad();
         return flat;
 
+class dbFrame(Frame):
+    def __init__(self,maxLevel,previousFrame=None):
+        super(dbFrame,self).__init__(previousFrame);
+        self.maxLevel = maxLevel;
+
+    def setLevel(self,level):
+        """ find our what row level corisponds to by finding out on a scale of 0 to maxLevel where it exist"""
+        levelpx = min(round((float(level)/float(self.maxLevel))*self.rows),self.rows)
+        print "setting levelPX to {}/{} = {}".format(level,self.maxLevel,levelpx)
+        for i in range(0,self.rows):
+            print 'checking row: ',i;
+            if (i > levelpx):
+                self.pixels[i] = [Pixel(255,255,255,0) for x in range(self.columns)]
+            else:
+                self.pixels[i] = [Pixel(0,255,0,0) for x in range(self.columns)]
+class dbStepFrame(dbFrame):
+    def __init__(self,maxLevel,previousFrame):
+        super(dbFrame,self).__init__(maxLevel,previousFrame);
+        if previousFrame == None or not previousFrame.has_attr('curLevel'):
+            self.curLevel = 0;
+        else:
+            self.curLevel = previousFrame.curLevel;
+    def setLevel(self,level):
+        if (level > self.curLevel):
+            self.currentLevel +=1;
+        else (level < self.curLevel):
+            self.currentLevel -=1;
+
 def startGUI(frameBuffer,quitEvent):
     a = QApplication(sys.argv)
     main = gui.LEDFakeout(frameBuffer);
@@ -95,8 +123,11 @@ def signal_handler(signal,frame):
     global quitEvent
     quitEvent.set();
 
+def getMicLevel():
+    "returns a db value from the mic"
+    return random.randint(0,100);
 def main():
-    maxSize = 60
+    maxSize = 3600
     frameBuffer = Queue.Queue(maxsize=maxSize)
     global quitEvent
     quitEvent = Event();
@@ -104,20 +135,17 @@ def main():
 
     guiThread= Thread(target=startGUI,args=(frameBuffer,quitEvent,))
     guiThread.start();
+    previousFrame = None;
     #main loop
     while guiThread.isAlive():
-        frame = Frame()
-        for m in range(frame.rows):
-            for n in range(frame.columns):
-                r1 = random.randint(0,255)
-                r2 = random.randint(0,255)
-                r3 = random.randint(0,255)
-                print "Setting pixel[{}][{}] = ({}, {}, {})".format(m,n,r1,r2,r3)
-                frame.pixels[m][n].set(r1,r2,r3,0)
-                print "    out"
-            print "  out"
-        print "out"
-        frameBuffer.put(frame)
+        #Generate a frame, add it to buffer
+        frame = dbFrame(100,previousFrame)
+        miclvl = getMicLevel();
+        print "getMicLevel=",miclvl
+        frame.setLevel(miclvl)
+        # push to buffer
+        frameBuffer.put(frame,False)
+        previousFrame = frame;
         time.sleep(1)
     sys.exit(0);
 
