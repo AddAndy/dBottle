@@ -4,12 +4,12 @@ from threading import Thread,Event
 import signal
 import time
 import Queue
-from PyQt4.QtGui import *
-from PyQt4 import QtCore
+#from PyQt4.QtGui import *
+#from PyQt4 import QtCore
 import sys
 import random
 #local files
-import gui
+#import gui
 from neopixel import *
 #This is the base file for the dBottle project for the 2016 ling awards
 #this is the main file.
@@ -174,4 +174,5 @@ def main(debug=False):
     sys.exit(0);
 
 if __name__ == '__main__':
+    strip = Adafruit_NeoPixel()
     main()
