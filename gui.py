@@ -34,10 +34,10 @@ class LEDFakeout(QTableWidget):
     def updateBackground(self):
         if self.frameBuffer.empty() == False:
             frame = self.frameBuffer.get();
-            for c in range(0,5):
-                for r in range(0,30):
+            for c in range(0,1):
+                for r in range(29,-1,-1):
                     tableItem = self.item(r,c);
-                    (R,G,B,Bri) = frame.getPixel(r,c).toQuad();
+                    (R,G,B,Bri) = frame.getPixel(29-r,c).toQuad();
                     tableItem.setBackground(QColor(R,G,B))
 
 

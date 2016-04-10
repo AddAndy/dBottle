@@ -10,7 +10,7 @@ import sys
 import random
 #local files
 import gui
-
+from neopixel import *
 #This is the base file for the dBottle project for the 2016 ling awards
 #this is the main file.
 class Pixel(object):
@@ -84,28 +84,47 @@ class dbFrame(Frame):
         super(dbFrame,self).__init__(previousFrame);
         self.maxLevel = maxLevel;
 
+    def setColourByLevel(self,level):
+        p = Pixel(255,255,255,0);
+        if 0 < level < 18:
+            p = Pixel(0,255,0,0)
+        elif 18 < level < 25:
+            p = Pixel(255,255,0,0)
+        elif 25 < level:
+            p = Pixel(255,0,0,0)
+        return p
+
     def setLevel(self,level):
         """ find our what row level corisponds to by finding out on a scale of 0 to maxLevel where it exist"""
         levelpx = min(round((float(level)/float(self.maxLevel))*self.rows),self.rows)
-        print "setting levelPX to {}/{} = {}".format(level,self.maxLevel,levelpx)
+        #print "setting levelPX to {}/{} = {}".format(level,self.maxLevel,levelpx)
         for i in range(0,self.rows):
-            print 'checking row: ',i;
+            #print 'checking row: ',i;
             if (i > levelpx):
                 self.pixels[i] = [Pixel(255,255,255,0) for x in range(self.columns)]
             else:
-                self.pixels[i] = [Pixel(0,255,0,0) for x in range(self.columns)]
+                self.pixels[i] = [self.setColourByLevel(i) for x in range(self.columns)]
+
 class dbStepFrame(dbFrame):
-    def __init__(self,maxLevel,previousFrame):
-        super(dbFrame,self).__init__(maxLevel,previousFrame);
-        if previousFrame == None or not previousFrame.has_attr('curLevel'):
-            self.curLevel = 0;
+    def __init__(self,maxLevel,previousFrame,stepValue=1):
+        super(dbStepFrame,self).__init__(maxLevel,previousFrame);
+        if previousFrame == None or not hasattr(previousFrame,'currentLevel'):
+            self.currentLevel = 0;
         else:
-            self.curLevel = previousFrame.curLevel;
+            self.currentLevel = previousFrame.currentLevel;
+        self.stepValue = stepValue;
+
     def setLevel(self,level):
-        if (level > self.curLevel):
-            self.currentLevel +=1;
-        else (level < self.curLevel):
-            self.currentLevel -=1;
+        stepvalue = min(self.stepValue,abs(level-self.currentLevel))
+
+        if (level > self.currentLevel):
+            self.currentLevel +=stepvalue
+            self.currentLevel = min(self.currentLevel,self.maxLevel)
+        elif(level < self.currentLevel):
+            self.currentLevel -=stepvalue;
+            self.currentLevel = max(self.currentLevel,0)
+
+        super(dbStepFrame,self).setLevel(self.currentLevel)
 
 def startGUI(frameBuffer,quitEvent):
     a = QApplication(sys.argv)
@@ -126,27 +145,32 @@ def signal_handler(signal,frame):
 def getMicLevel():
     "returns a db value from the mic"
     return random.randint(0,100);
-def main():
-    maxSize = 3600
-    frameBuffer = Queue.Queue(maxsize=maxSize)
-    global quitEvent
-    quitEvent = Event();
-    signal.signal(signal.SIGINT, signal_handler)
 
-    guiThread= Thread(target=startGUI,args=(frameBuffer,quitEvent,))
-    guiThread.start();
+def main(debug=False):
+    maxSize = 0
+    frameBuffer = Queue.Queue(maxsize=maxSize)
+
+    if debug:
+        global quitEvent
+        quitEvent = Event();
+        signal.signal(signal.SIGINT, signal_handler)
+        guiThread= Thread(target=startGUI,args=(frameBuffer,quitEvent,))
+        guiThread.start();
+
     previousFrame = None;
     #main loop
-    while guiThread.isAlive():
+    while True: #guiThread.isAlive():
         #Generate a frame, add it to buffer
-        frame = dbFrame(100,previousFrame)
+        frame = dbStepFrame(100,previousFrame,stepValue=5)
         miclvl = getMicLevel();
-        print "getMicLevel=",miclvl
+        #print "getMicLevel=",miclvl
         frame.setLevel(miclvl)
         # push to buffer
         frameBuffer.put(frame,False)
         previousFrame = frame;
-        time.sleep(1)
+
+        time.sleep(1/60)
+        print frameBuffer.qsize();
     sys.exit(0);
 
 if __name__ == '__main__':
