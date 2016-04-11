@@ -74,8 +74,8 @@ class Frame(object):
 
     def flatten(self):
         i=0;
-        for m in self.rows:
-            for n in self.columns:
+        for m in range(self.rows):
+            for n in range(self.columns):
                 i = (150-30*n-m)-1
                 flat[i] = self.pixels[m][n].toQuad();
         return flat;

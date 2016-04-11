@@ -11,7 +11,7 @@ from neopixel import *
 class rpi_leds(object):
 
     def __init__(self,queue):
-        self.strip=Adafruit_Neopixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+        self.strip=Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
         self.q = queue;
 
     def start(self,updateTimeMs,quitEvent):
