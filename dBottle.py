@@ -6,6 +6,7 @@ import time
 import Queue
 import sys
 import random
+from copy import deepcopy
 #from neopixel import *
 global debug;
 debug = False
@@ -62,11 +63,11 @@ class Frame(object):
         if (previousFrame == None):
             self.pixels = [[Pixel(0,255,0,0) for x in range(self.columns)] for x in range(self.rows)]
         else:
-            self.pixels = previousFrame.pixels;
+            self.pixels = deepcopy(previousFrame.pixels);
 
     def clear(self):
-        for m in self.rows:
-            for n in self.columns:
+        for m in range(self.rows):
+            for n in range(self.columns):
                 pixels[m][n].clear();
 
     def getPixel(self,r,c):
@@ -74,10 +75,11 @@ class Frame(object):
 
     def flatten(self):
         i=0;
-        for m in range(self.rows):
-            for n in range(self.columns):
-                i = (150-30*n-m)-1
-                flat[i] = self.pixels[m][n].toQuad();
+        flat = [(0,0,0,0)]*150
+        for r in range(self.rows):
+            for c in range(self.columns):
+                i = (150-30*c-r)-1
+                flat[i] = self.getPixel(r,c).toQuad();
         return flat;
 
 class dbFrame(Frame):
