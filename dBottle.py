@@ -4,13 +4,15 @@ from threading import Thread,Event
 import signal
 import time
 import Queue
-#from PyQt4.QtGui import *
-#from PyQt4 import QtCore
 import sys
 import random
-#local files
-#import gui
-from neopixel import *
+#from neopixel import *
+global debug;
+debug = False
+if debug:
+    import gui
+else:
+    import rpi_neo
 #This is the base file for the dBottle project for the 2016 ling awards
 #this is the main file.
 class Pixel(object):
@@ -61,7 +63,6 @@ class Frame(object):
             self.pixels = [[Pixel(0,255,0,0) for x in range(self.columns)] for x in range(self.rows)]
         else:
             self.pixels = previousFrame.pixels;
-
 
     def clear(self):
         for m in self.rows:
@@ -126,17 +127,6 @@ class dbStepFrame(dbFrame):
 
         super(dbStepFrame,self).setLevel(self.currentLevel)
 
-def startGUI(frameBuffer,quitEvent):
-    a = QApplication(sys.argv)
-    main = gui.LEDFakeout(frameBuffer);
-    main.show();
-    while not quitEvent.isSet():
-        a.processEvents();
-    print "Quit Event Detected, Terminating"
-    a.exit()
-
-    return;
-
 def signal_handler(signal,frame):
     print ("Ctrl + C detected")
     global quitEvent
@@ -146,20 +136,35 @@ def getMicLevel():
     "returns a db value from the mic"
     return random.randint(0,100);
 
-def main(debug=False):
+def isAlive():
+    global debug
+    global quitEvent
+    if debug is True:
+        global guiThread
+        return guiThread.isAlive();
+    elif quitEvent.isSet():
+        return False
+    else:
+        return True
+
+def main():
     maxSize = 0
     frameBuffer = Queue.Queue(maxsize=maxSize)
+    signal.signal(signal.SIGINT, signal_handler)
+    global quitEvent
+    quitEvent = Event();
 
     if debug:
-        global quitEvent
-        quitEvent = Event();
-        signal.signal(signal.SIGINT, signal_handler)
-        guiThread= Thread(target=startGUI,args=(frameBuffer,quitEvent,))
+        global guiThread
+        guiThread= Thread(target=gui.startGUI,args=(frameBuffer,quitEvent,))
         guiThread.start();
 
+    leds = rpi_neo.rpi_leds(frameBuffer)
+    ledThread = Thread(target=leds.start,args=(50,quitEvent,))
+    ledThread.start()
     previousFrame = None;
     #main loop
-    while True: #guiThread.isAlive():
+    while isAlive(): #guiThread.isAlive():
         #Generate a frame, add it to buffer
         frame = dbStepFrame(100,previousFrame,stepValue=5)
         miclvl = getMicLevel();
@@ -169,10 +174,11 @@ def main(debug=False):
         frameBuffer.put(frame,False)
         previousFrame = frame;
 
-        time.sleep(1/60)
+        time.sleep(1/60.0)
         print frameBuffer.qsize();
     sys.exit(0);
 
 if __name__ == '__main__':
-    strip = Adafruit_NeoPixel()
+
+    #strip = Adafruit_NeoPixel()
     main()

@@ -40,6 +40,16 @@ class LEDFakeout(QTableWidget):
                     (R,G,B,Bri) = frame.getPixel(29-r,c).toQuad();
                     tableItem.setBackground(QColor(R,G,B))
 
+def startGUI(frameBuffer,quitEvent):
+    a = QApplication(sys.argv)
+    main = LEDFakeout(frameBuffer);
+    main.show();
+    while not quitEvent.isSet():
+        a.processEvents();
+    print "Quit Event Detected, Terminating"
+    a.exit()
+
+    return;
 
 if __name__ == '__main__':
     print "Error, please run dBottle.py"
