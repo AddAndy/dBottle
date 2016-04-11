@@ -7,7 +7,7 @@ LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 
 from neopixel import *
-
+import time
 class rpi_leds(object):
 
     def __init__(self,queue):
