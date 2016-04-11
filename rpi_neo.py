@@ -8,7 +8,7 @@ LED_INVERT     = False   # True to invert the signal (when using NPN transistor 
 
 from neopixel import *
 
-class rpi_leds(Object):
+class rpi_leds(object):
 
     def __init__(self,queue):
         self.strip=Adafruit_Neopixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
@@ -28,6 +28,7 @@ class rpi_leds(Object):
             frame = self.q.get();
             flatten_list = frame.flatten();
             i = 0;
+            print "printing LED list"
             for pixel in flatten_list:
                 self.strip.setPixelColor(i,Color(pixel[0],pixel[1],pixel[2]))
             self.strip.show()
