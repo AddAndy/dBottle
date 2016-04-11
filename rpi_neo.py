@@ -32,4 +32,5 @@ class rpi_leds(object):
             for pixel in flatten_list:
                 print "setting pixel {} to ({},{},{})".format(i,pixel[0],pixel[1],pixel[2])
                 self.strip.setPixelColor(i,Color(pixel[0],pixel[1],pixel[2]))
+                i+=1;
             self.strip.show()
